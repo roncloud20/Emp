@@ -1,0 +1,18 @@
+CREATE DATABASE emprint_db;
+USE emprint_db;
+CREATE TABLE users (
+    user_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    firstname VARCHAR(50) NOT NULL,
+    lastname VARCHAR(50) NOT NULL,
+    email VARCHAR(255) NOT NULL UNIQUE KEY,
+    password VARCHAR(255) NOT NULL,
+    phone VARCHAR(15) UNIQUE KEY, 
+    user_role ENUM('admin', 'vendor', 'user') DEFAULT 'user',
+    gender ENUM("male", 'female', 'others') DEFAULT 'female',
+    date_of_birth DATE NULL,
+    verification_code INT(6) NULL,
+    verified DATETIME NULL,
+    active BOOLEAN,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
