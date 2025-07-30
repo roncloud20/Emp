@@ -81,7 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] === "POST") {
             </p>
             <p>Please use this code to verify your account: <span style='color:red'>$verification_code</span>
             </p>
-            <p>Or click on the link below to verify your acount <a href='http://localhost/emp/verify.php?code=$verification_code'>Click Here</a>
+            <p>Or click on the link below to verify your acount <a href='http://localhost/emp/verify.php?email=$email'>Click Here</a>
             </p>
             <h3>Thank you for registering with us.<br/>
             Best Regards,<br/>
@@ -89,7 +89,8 @@ if ($_SERVER['REQUEST_METHOD'] === "POST") {
         ";
         if ($mail->send()) {
             if ($stmt->execute()) {
-                echo "<h1>Registration Successful</h1>";
+                echo "<script>alert('Registration Successful')</script>";
+                header("Location: http://localhost/emp/verify.php?email=$email");
             } else {
                 echo "<h1>Registration Failed</h1>";
                 echo ("Database Error " . mysqli_error($conn));
