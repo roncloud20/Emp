@@ -1,12 +1,16 @@
 <?php
-// Adding pagetitle and header
+// Adding pagetitle and header and mailer
 $pagetitle = "Create an Account";
 require_once("assets/header.php");
+require_once("assets/mailer.php");
 
+// Initializing Variables
 $firstName = $lastName = $email = $password = $confirmPassword = $tel = $dob = $gender = $role = "";
 
+// Initializing Errors Variables
+$emailErr = $telErr = $passErr = $cPassErr = "";
 
-if($_SERVER['REQUEST_METHOD'] === "POST") {
+if ($_SERVER['REQUEST_METHOD'] === "POST") {
     $firstName = $_POST['firstName'];
     $lastName = $_POST['lastName'];
     $email = $_POST['email'];
@@ -17,7 +21,83 @@ if($_SERVER['REQUEST_METHOD'] === "POST") {
     $gender = $_POST['gender'];
     $role = $_POST['role'];
 
-    echo "<h1>$firstName, $lastName, $email, $password, $confirmPassword, $tel, $dob, $gender, $role</h1>";
+    // Validating Phone Number
+    if (!preg_match('/^0[789][01]\d{8}$/', $tel)) {
+        echo "<script>alert('Invalid Phone Number');</script>";
+        $telErr = "Invalid Phone Number";
+        // exit("<script>alert('Invalid Phone Number');</script>");
+    } else {
+        $query = "SELECT * FROM users WHERE phone = ?";
+        $stmt = $conn->prepare($query);
+        $stmt->bind_param('s', $tel);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        if ($result->num_rows > 0) {
+            $telErr = "Phone Number already exists";
+        }
+    }
+
+    // Validating Email
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        echo "<script>alert('Invalid Email');</script>";
+        $emailErr = "Invalid Email";
+        // die("<script>alert('Invalid Email');</script>");
+    } else {
+        $query = "SELECT * FROM users WHERE email = ?";
+        $stmt = $conn->prepare($query);
+        $stmt->bind_param('s', $email);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        if ($result->num_rows > 0) {
+            $emailErr = "Email already exists";
+        }
+    }
+
+    // Validating Password
+    if ($password !== $confirmPassword) {
+        $passErr = $cPassErr = "Password do not match";
+    } else {
+        $hashP = password_hash($password, PASSWORD_DEFAULT);
+    }
+
+    if ($telErr == "" && $emailErr == "" && $passErr == "" && $cPassErr == "") {
+        $verification_code = rand(100000, 999999);
+        echo $verification_code;
+        $query = "INSERT INTO users(firstname, lastname, email, password, phone, user_role, gender, date_of_birth, verification_code) VALUES (?,?,?,?,?,?,?,?,?)";
+
+        $stmt = $conn->prepare($query);
+        $stmt->bind_param('sssssssss', $firstName, $lastName, $email, $hashP, $tel, $role, $gender, $dob, $verification_code);
+
+        // Mail
+        $name = $firstName . " " . $lastName;
+        $mail->setFrom('emp@roncloud.com.ng', "Emprint");
+        $mail->addAddress($email, $name);
+        $mail->isHTML(true);
+        $mail->Subject = "Account Verification";
+        $mail->Body = "
+            <h1>Hello $name</h1>
+            <p>
+                Your account has been created successfully. Please click on the link below to verify your account.
+            </p>
+            <p>Please use this code to verify your account: <span style='color:red'>$verification_code</span>
+            </p>
+            <p>Or click on the link below to verify your acount <a href='http://localhost/emp/verify.php?code=$verification_code'>Click Here</a>
+            </p>
+            <h3>Thank you for registering with us.<br/>
+            Best Regards,<br/>
+            Emprint</h3>
+        ";
+        if ($mail->send()) {
+            if ($stmt->execute()) {
+                echo "<h1>Registration Successful</h1>";
+            } else {
+                echo "<h1>Registration Failed</h1>";
+                echo ("Database Error " . mysqli_error($conn));
+            }
+        } else {
+            echo "Mailer Error: " . $mail->ErrorInfo;
+        }
+    }
 }
 ?>
 <main>
@@ -53,18 +133,20 @@ if($_SERVER['REQUEST_METHOD'] === "POST") {
                             </div>
                             <form method="post">
                                 <div class="row gy-3 overflow-hidden">
+
                                     <!-- First Name -->
                                     <div class="col-12">
                                         <div class="form-floating mb-3">
-                                            <input type="text" class="form-control" name="firstName" id="firstName" placeholder="First Name" value="<?=$firstName ?>" required>
+                                            <input type="text" class="form-control" name="firstName" id="firstName" placeholder="First Name" value="<?= $firstName ?>" required />
                                             <label for="firstName" class="form-label">First Name</label>
+
                                         </div>
                                     </div>
 
                                     <!-- Last Name -->
                                     <div class="col-12">
                                         <div class="form-floating mb-3">
-                                            <input type="text" class="form-control" name="lastName" id="lastName" placeholder="Last Name" value="<?=$lastName?>" required>
+                                            <input type="text" class="form-control" name="lastName" id="lastName" placeholder="Last Name" value="<?= $lastName ?>" required />
                                             <label for="lastName" class="form-label">Last Name</label>
                                         </div>
                                     </div>
@@ -72,39 +154,43 @@ if($_SERVER['REQUEST_METHOD'] === "POST") {
                                     <!-- Email Address -->
                                     <div class="col-12">
                                         <div class="form-floating mb-3">
-                                            <input type="email" class="form-control" name="email" id="email" placeholder="name@example.com" value="<?=$email?>" required/>
+                                            <input type="text" class="form-control" name="email" id="email" placeholder="name@example.com" value="<?= $email ?>" required />
                                             <label for="email" class="form-label">Email</label>
+                                            <span class="text-danger"><?= $emailErr ?></span>
                                         </div>
                                     </div>
 
                                     <!-- Password -->
                                     <div class="col-12">
                                         <div class="form-floating mb-3">
-                                            <input type="password" class="form-control" name="password" id="password" placeholder="Password" value="<?=$password?>" required>
+                                            <input type="password" class="form-control" name="password" id="password" placeholder="Password" value="<?= $password ?>" required>
                                             <label for="password" class="form-label">Password</label>
+                                            <span class="text-danger"><?= $passErr ?></span>
                                         </div>
                                     </div>
-                                    
+
                                     <!-- Confirm Password -->
                                     <div class="col-12">
                                         <div class="form-floating mb-3">
-                                            <input type="password" class="form-control" name="confirmPassword" id="confirmPassword" placeholder="Confirm Password" value="<?=$confirmPassword?>" required>
+                                            <input type="password" class="form-control" name="confirmPassword" id="confirmPassword" placeholder="Confirm Password" value="<?= $confirmPassword ?>" required />
                                             <label for="confirmPassword" class="form-label">Confirm Password</label>
+                                            <span class="text-danger"><?= $cPassErr ?></span>
                                         </div>
                                     </div>
 
                                     <!-- Phone Number -->
                                     <div class="col-12">
                                         <div class="form-floating mb-3">
-                                            <input type="tel" class="form-control" name="tel" id="tel" placeholder="Phone Number" value="<?=$tel?>" required>
+                                            <input type="tel" class="form-control" name="tel" id="tel" placeholder="Phone Number" value="<?= $tel ?>" required />
                                             <label for="tel" class="form-label">Phone Number</label>
+                                            <span class="text-danger"><?= $telErr ?></span>
                                         </div>
                                     </div>
 
                                     <!-- Date of Birth -->
                                     <div class="col-12">
                                         <div class="form-floating mb-3">
-                                            <input type="date" class="form-control" name="dob" id="dob" placeholder="Date Of Birth" value="<?=$dob?>" required>
+                                            <input type="date" class="form-control" name="dob" id="dob" placeholder="Date Of Birth" value="<?= $dob ?>" required />
                                             <label for="dob" class="form-label">Date Of Birth</label>
                                         </div>
                                     </div>
@@ -113,15 +199,15 @@ if($_SERVER['REQUEST_METHOD'] === "POST") {
                                     <div class="col-12 d-flex gap-2">
                                         <label>Gender: </label>
                                         <div class=" mb-3">
-                                            <input type="radio" class="form-check-input"  name="gender" id="gender" value="male"/>
+                                            <input type="radio" class="form-check-input" name="gender" id="gender" value="male" />
                                             <label>Male</label>
                                         </div>
                                         <div class=" mb-3">
-                                            <input type="radio" class="form-check-input" name="gender" id="gender" value="female"/>
+                                            <input type="radio" class="form-check-input" name="gender" id="gender" value="female" checked />
                                             <label>Female</label>
                                         </div>
                                         <div class=" mb-3">
-                                            <input type="radio"  class="form-check-input" name="gender" id="gender" value="others"/>
+                                            <input type="radio" class="form-check-input" name="gender" id="gender" value="others" />
                                             <label>Brian</label>
                                         </div>
                                     </div>
@@ -130,11 +216,11 @@ if($_SERVER['REQUEST_METHOD'] === "POST") {
                                     <div class="col-12 d-flex gap-2">
                                         <label>Role: </label>
                                         <div class=" mb-3">
-                                            <input type="radio" class="form-check-input" name="role" id="role" value="user"/>
+                                            <input type="radio" class="form-check-input" name="role" id="role" value="user" checked />
                                             <label>User</label>
                                         </div>
                                         <div class=" mb-3">
-                                            <input type="radio" class="form-check-input" name="role" id="role" value="vendor"/>
+                                            <input type="radio" class="form-check-input" name="role" id="role" value="vendor" />
                                             <label>Vendor</label>
                                         </div>
                                     </div>
@@ -157,6 +243,7 @@ if($_SERVER['REQUEST_METHOD'] === "POST") {
                                     </div>
                                 </div>
                             </form>
+                            <!-- Redirect to login -->
                             <div class="row">
                                 <div class="col-12">
                                     <div class="d-flex gap-2 gap-md-4 flex-column flex-md-row justify-content-md-end mt-4">
