@@ -19,3 +19,17 @@ CREATE TABLE users (
 
 TRUNCATE TABLE users;
 ALTER TABLE users AUTO_INCREMENT = 1;
+
+CREATE TABLE products (
+    product_id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    product_name VARCHAR(255) NOT NULL,
+    product_desc LONGTEXT NOT NULL,
+    initial_price DECIMAL(11,2) NOT NULL,
+    selling_price DECIMAL(11,2) NOT NULL,
+    vendor_id BIGINT NOT NULL REFERENCES users(user_id),
+    product_quantity INT DEFAULT 0,
+    product_image VARCHAR(255) NOT NULL,
+    active BOOLEAN DEFAULT TRUE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);

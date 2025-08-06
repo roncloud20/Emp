@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <?php 
+    session_start();
     require_once("assets/db_connect.php");
 ?>
 <head>
@@ -21,6 +22,25 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarScroll">
                 <ul class="navbar-nav me-auto my-2 my-lg-0 navbar-nav-scroll" style="--bs-scroll-height: 100px;">
+                    <?php if(isset($_SESSION['user_id']) && $_SESSION['role'] === 'vendor') {?>
+                    <li class="nav-item">
+                        <a class="nav-link active" aria-current="page" href="dashboard.php">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" aria-current="page" href="addproduct.php">Add Product</a>
+                    </li>
+
+                    <?php } else if(isset($_SESSION['user_id']) && $_SESSION['role'] === 'admin') { ?>
+                        <li class="nav-item">
+                        <a class="nav-link active" aria-current="page" href="dashboard.php">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" aria-current="page" href="addproduct.php">Add Product</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" aria-current="page" href="addproduct.php">Vendors</a>
+                    </li>
+                    <?php } else { ?>
                     <li class="nav-item">
                         <a class="nav-link active" aria-current="page" href="index.php">Home</a>
                     </li>
@@ -43,13 +63,18 @@
                     <li class="nav-item">
                         <a class="nav-link disabled" aria-disabled="true">Link</a>
                     </li>
+                    <?php } ?>
                 </ul>
                 <form class="d-flex" role="search">
                     <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search" />
                     <button class="btn btn-outline-success" type="submit">Search</button>
                 </form>
+                <?php if(isset($_SESSION['user_id'])) {?>
+                    <a href="logout.php" class="btn btn-outline-danger m-2">Logout</a>
+                <?php } else { ?>
                 <a href="register.php" class="btn btn-outline-primary m-2">Sign Up</a>
                 <a href="login.php" class="btn btn-outline-danger m-2">Login</a>
+                <?php } ?>
             </div>
         </div>
     </nav>

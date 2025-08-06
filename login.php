@@ -1,5 +1,5 @@
 <?php
-session_start();
+// session_start();
 $pagetitle = "Login";
 require_once("assets/header.php");
 
@@ -13,16 +13,20 @@ if($_SERVER['REQUEST_METHOD'] === 'POST') {
     $result = $stmt->get_result();
     if($result->num_rows === 1) {
         $row = $result->fetch_assoc();
-        if(password_verify($password, $row['password']) AND $row['verified'] != NULL) {
-            echo "Login Successful";
-            $_SESSION['user_id'] = $row['user_id'];
-            $_SESSION['email'] = $row['email'];
-            $_SESSION['phone'] = $row['phone'];
-            $_SESSION['role'] = $row['user_role'];
-            // header("Location: index.php");
-
+        if ($row['verified'] !== NULL) {
+            // if password is correct (use password_verify() function
+            if(password_verify($password, $row['password'])) {
+                echo "Login Successful";
+                $_SESSION['user_id'] = $row['user_id'];
+                $_SESSION['email'] = $row['email'];
+                $_SESSION['phone'] = $row['phone'];
+                $_SESSION['role'] = $row['user_role'];
+                header("Location: dashboard.php");
+            } else {
+                echo "Invalid email or password";
+            }
         } else {
-            echo "Invalid email or password";
+            echo "Email not verified";
         }
         echo "<pre>";
         print_r($row);
